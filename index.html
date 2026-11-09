@@ -91,8 +91,9 @@
         </div>
       </div>
       <div class="header-actions">
+        <!-- BOTÃO ADD OS -->
         <button class="btn-icon add-btn animate-pop" id="btn-nova-os" onclick="abrirModalNovaOS()" title="Nova Ordem de Serviço">
-          <span class="material-symbols-outlined">add</span>
+          <span class="material-symbols-outlined">add</span> <span class="add-btn-text">Add OS</span>
         </button>
         <button class="btn-icon animate-pop" id="btn-logout" title="Sair">
           <span class="material-symbols-outlined">logout</span>
@@ -100,28 +101,35 @@
       </div>
     </header>
 
-    <!-- PAINEL DE BUSCA E FILTROS FIXO (SEM TRANSPARÊNCIA E SEM TREMOR) -->
+    <!-- ÁREA RECOLHÍVEL DOS CARDS -->
+    <div id="top-cards-wrap">
+      <div class="collapsible-inner">
+        <div class="dashboard-cards-container">
+          <section class="dashboard-cards">
+            <div class="dash-card status-aberto animate-hover" onclick="alternarFiltro('EM ABERTO', this)">
+              <div class="dash-icon"><span class="material-symbols-outlined">assignment</span></div>
+              <div class="dash-info"><h3>Em Aberto</h3><h2 id="count-aberto">0</h2></div>
+            </div>
+            <div class="dash-card status-pecas animate-hover" onclick="alternarFiltro('AGUARDANDO PEÇAS', this)">
+              <div class="dash-icon"><span class="material-symbols-outlined">inventory_2</span></div>
+              <div class="dash-info"><h3>Aguard. Peças</h3><h2 id="count-pecas">0</h2></div>
+            </div>
+            <div class="dash-card status-andamento animate-hover" onclick="alternarFiltro('EM ANDAMENTO', this)">
+              <div class="dash-icon"><span class="material-symbols-outlined">pending_actions</span></div>
+              <div class="dash-info"><h3>Em Andamento</h3><h2 id="count-andamento">0</h2></div>
+            </div>
+            <div class="dash-card status-concluido animate-hover" onclick="alternarFiltro('CONCLUÍDO', this)">
+              <div class="dash-icon"><span class="material-symbols-outlined">check_circle</span></div>
+              <div class="dash-info"><h3>Concluídas</h3><h2 id="count-concluido">0</h2></div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAINEL DE BUSCA E FILTROS FIXO (SEMPRE VISÍVEL) -->
     <div class="sticky-filters-container">
       <div class="app-content-inner">
-        <section class="dashboard-cards">
-          <div class="dash-card status-aberto animate-hover" onclick="alternarFiltro('EM ABERTO', this)">
-            <div class="dash-icon"><span class="material-symbols-outlined">assignment</span></div>
-            <div class="dash-info"><h3>Em Aberto</h3><h2 id="count-aberto">0</h2></div>
-          </div>
-          <div class="dash-card status-pecas animate-hover" onclick="alternarFiltro('AGUARDANDO PEÇAS', this)">
-            <div class="dash-icon"><span class="material-symbols-outlined">inventory_2</span></div>
-            <div class="dash-info"><h3>Aguard. Peças</h3><h2 id="count-pecas">0</h2></div>
-          </div>
-          <div class="dash-card status-andamento animate-hover" onclick="alternarFiltro('EM ANDAMENTO', this)">
-            <div class="dash-icon"><span class="material-symbols-outlined">pending_actions</span></div>
-            <div class="dash-info"><h3>Em Andamento</h3><h2 id="count-andamento">0</h2></div>
-          </div>
-          <div class="dash-card status-concluido animate-hover" onclick="alternarFiltro('CONCLUÍDO', this)">
-            <div class="dash-icon"><span class="material-symbols-outlined">check_circle</span></div>
-            <div class="dash-info"><h3>Concluídas</h3><h2 id="count-concluido">0</h2></div>
-          </div>
-        </section>
-
         <div class="filters-bar">
           <div class="search-box">
             <span class="material-symbols-outlined">search</span>
@@ -215,11 +223,13 @@
         </div>
 
         <div style="background:var(--bg-color); padding:10px 12px; border-radius:8px; margin-bottom:12px;">
-           <h4 style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 4px;">📌 Orientações / Informações:</h4>
+           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 4px;">
+             <h4 style="font-size: 0.78rem; color: var(--text-muted); margin:0;">📌 Orientações / Informações:</h4>
+             <button id="btn-edit-obs-os" class="btn-mini-acao animate-pop" title="Editar Orientações" onclick="editarObservacaoOS()"><span class="material-symbols-outlined" style="font-size:16px;">edit</span></button>
+           </div>
            <p id="modal-desc" style="font-size:0.85rem;"></p>
         </div>
         
-        <!-- BOTÕES COMPACTOS NO CELULAR -->
         <div class="action-bar-os-compact">
           <button class="btn-outline animate-pop" onclick="prepararInteracao('OS', 'FOTO')"><span class="material-symbols-outlined" style="font-size:18px;">photo_camera</span> Anexar Foto</button>
           <button class="btn-outline animate-pop" onclick="prepararInteracao('OS', 'ARQUIVO')"><span class="material-symbols-outlined" style="font-size:18px;">attach_file</span> Anexar Arquivo</button>
@@ -271,7 +281,7 @@
     <div class="modal-content animate-modal" style="max-width: 380px;">
       <div class="modal-header">
         <h3 id="interacao-titulo" style="font-size:1rem;">Adicionar</h3>
-        <button class="btn-icon" style="width:32px; height:32px;" onclick="document.getElementById('modal-interacao').classList.remove('active')"><span class="material-symbols-outlined" style="font-size:18px;">close</span></button>
+        <button class="btn-icon" style="width:32px; height:32px;" onclick="fecharModalInteracao()"><span class="material-symbols-outlined" style="font-size:18px;">close</span></button>
       </div>
       <div class="modal-body">
         <div id="area-foto" style="display:none; text-align:center;">

@@ -3,7 +3,6 @@
 // =========================================================================
 
 const API_URL = 'https://script.google.com/macros/s/AKfycbxY3JojVBG2XrhXJlbbV3cijVB19AdfuTgPv8U1668DwIFoofR-YR-4aiXKSVeneLhI/exec';
-
 let usuarioAtual = null;
 let todasOS = []; 
 let osAbertaNoModal = null; 
@@ -28,6 +27,16 @@ function formatarPrevisao(os) {
     if(p.length === 3) return { exibicao: prev, raw: `${p[2]}-${p[1]}-${p[0]}` };
   }
   return { exibicao: prev, raw: '' };
+}
+
+// Verifica se há modais abertos e trava o body (Evita Scroll Bleed)
+function checkModalsOpen() {
+  const modaisAbertos = Array.from(document.querySelectorAll('.modal-overlay')).some(m => m.classList.contains('active'));
+  if (modaisAbertos) {
+    document.body.classList.add('modal-open');
+  } else {
+    document.body.classList.remove('modal-open');
+  }
 }
 
 // --- LOGIN ---
@@ -84,6 +93,7 @@ function abrirModalCadastro() {
   document.getElementById('form-cadastro').reset();
   document.getElementById('cad-msg').style.display = 'none';
   document.getElementById('modal-cadastro').classList.add('active');
+  checkModalsOpen();
 }
 
 document.getElementById('form-cadastro').addEventListener('submit', async (e) => {
@@ -271,41 +281,66 @@ function renderizarListaOS(lista) {
     const prevExibicao = prevObj.exibicao;
 
     const card = document.createElement('div');
-    card.className = 'os-card animate-hover'; card.style.borderLeft = `5px solid ${cor}`;
+    card.className = 'os-card animate-hover'; 
+    card.style.borderLeft = `5px solid ${cor}`;
+    
+    let btnStatus = sStr.includes('PEÇAS') || sStr.includes('PECAS') || sStr.includes('MATERIAL') 
+      ? `<button class="btn-texto-card animate-pop" onclick="mudarStatusOS('${osID}', 'Em Andamento', this)" title="Material Recebido"><span class="material-symbols-outlined" style="font-size:16px; color:var(--status-concluido);">check_circle</span> Material Recebido</button>`
+      : `<button class="btn-texto-card animate-pop" onclick="mudarStatusOS('${osID}', 'Aguardando Peças', this)" title="Aguardando Material"><span class="material-symbols-outlined" style="font-size:16px; color:var(--status-pecas);">inventory_2</span> Aguardando Material</button>`;
+
     card.innerHTML = `
       <div class="os-card-header">
         <span class="os-id"><span class="material-symbols-outlined" style="vertical-align:middle; font-size:18px;">handyman</span> ${osID}</span>
-        <span class="badge-prioridade" style="background:${isRed?'#fecaca':'#e2e8f0'}; color:${isRed?'#b91c1c':'#475569'};">${isRed?'🚨 ':''}${os.prioridade}</span>
+        <span class="badge-prioridade" style="background:${isRed?'#fecaca':'#e2e8f0'}; color:${isRed?'#b91c1c':'#475569'};">Prioridade: ${isRed?'🚨 ':''}${os.prioridade||'Baixa'}</span>
       </div>
-      <h3 class="os-titulo">${os.setorlocal||os.setor} - ${os.descricaodoservico||os.descricao}</h3>
-      <div class="os-meta">
-        <span><span class="material-symbols-outlined" style="font-size:15px;">calendar_today</span> ${os.datasolicitacao||''}</span>
-        <span><span class="material-symbols-outlined" style="font-size:15px;">event_available</span> Prev: ${prevExibicao}</span>
-        <span><span class="material-symbols-outlined" style="font-size:15px;">person</span> ${os.solicitante||''}</span>
+      <div style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600; margin-bottom: 2px;">Setor: ${os.setorlocal||os.setor}</div>
+      <h3 class="os-titulo">${os.descricaodoservico||os.descricao}</h3>
+      
+      <div class="os-meta-grid">
+        <div class="meta-row">
+            <span class="meta-lbl">Data de Início:</span>
+            <span class="meta-val"><span class="material-symbols-outlined">calendar_today</span> ${os.datasolicitacao||''}</span>
+        </div>
+        <div class="meta-row">
+            <span class="meta-lbl">Previsão de término:</span>
+            <span class="meta-val"><span class="material-symbols-outlined">event_available</span> ${prevExibicao}</span>
+        </div>
+        <div class="meta-row" style="width: 100%;">
+            <span class="meta-lbl">Solicitante:</span>
+            <span class="meta-val"><span class="material-symbols-outlined">person</span> ${os.solicitante||''}</span>
+        </div>
       </div>
-      <div class="os-footer">
-        <div style="display:flex; align-items:center; gap:6px; font-size:0.8rem; font-weight:600;">
+      
+      <div class="os-footer" style="border-top:1px solid var(--border); padding-top:12px; margin-top:6px;">
+        <div style="display:flex; align-items:center; gap:6px; font-size:0.85rem; font-weight:600; width:100%; margin-bottom:10px;">
           <span style="color:${cor}">${os.status}</span>
-          <div class="mini-progress-bg"><div class="mini-progress-fill" style="width:${progReal}%; background:${cor}"></div></div>
-          <span style="color:var(--text-muted); font-size:0.7rem;">${progReal}%</span>
+          <div class="mini-progress-bg" style="flex:1;"><div class="mini-progress-fill" style="width:${progReal}%; background:${cor}"></div></div>
+          <span style="color:var(--text-muted); font-size:0.75rem;">${progReal}%</span>
         </div>
-        <div class="os-card-actions">
-          ${sStr.includes('PEÇAS') || sStr.includes('PECAS') || sStr.includes('MATERIAL') 
-            ? `<button class="btn-texto-card animate-pop" onclick="mudarStatusOS('${osID}', 'Em Andamento')" title="Material Recebido"><span class="material-symbols-outlined" style="font-size:15px; color:var(--status-concluido);">check_circle</span> Recebido</button>`
-            : `<button class="btn-texto-card animate-pop" onclick="mudarStatusOS('${osID}', 'Aguardando Peças')" title="Aguardando Material"><span class="material-symbols-outlined" style="font-size:15px; color:var(--status-pecas);">inventory_2</span> Aguardar</button>`
-          }
-          <button class="btn-texto-card animate-pop" onclick="abrirModalEdicaoOS('${osID}')" title="Editar OS"><span class="material-symbols-outlined" style="font-size:15px; color:var(--primary);">edit</span> Editar</button>
-          <button class="btn-detalhes animate-pop" onclick="abrirDetalhesOS('${encodeURIComponent(JSON.stringify(os))}', '${cor}', ${progReal})">
-            Detalhes <span class="material-symbols-outlined" style="font-size:15px;">arrow_forward</span>
-          </button>
+        
+        <div class="os-card-actions-grid">
+          ${btnStatus}
+          <button class="btn-texto-card animate-pop" onclick="abrirModalEdicaoOS('${osID}')" title="Editar OS"><span class="material-symbols-outlined" style="font-size:16px; color:var(--primary);">edit</span> Editar</button>
         </div>
+        
+        <button class="btn-detalhes-full animate-pop" onclick="abrirDetalhesOS('${encodeURIComponent(JSON.stringify(os))}', '${cor}', ${progReal})">
+          Detalhes <span class="material-symbols-outlined" style="font-size:18px;">arrow_forward</span>
+        </button>
       </div>
     `;
     container.appendChild(card);
   });
 }
 
-function fecharModais() { document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active')); }
+function fecharModais() { 
+  document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active')); 
+  checkModalsOpen();
+}
+
+function fecharModalInteracao() {
+  document.getElementById('modal-interacao').classList.remove('active');
+  checkModalsOpen(); 
+}
 
 function abrirModalNovaOS() { 
   document.getElementById('form-nova-os').reset();
@@ -318,6 +353,7 @@ function abrirModalNovaOS() {
   btn.disabled = false;
   
   document.getElementById('modal-nova-os').classList.add('active'); 
+  checkModalsOpen();
 }
 
 function abrirModalEdicaoOS(idOS) {
@@ -339,6 +375,7 @@ function abrirModalEdicaoOS(idOS) {
   document.getElementById('nova-os-prev').value = prevObj.raw;
 
   document.getElementById('modal-nova-os').classList.add('active');
+  checkModalsOpen();
 }
 
 document.getElementById('form-nova-os').addEventListener('submit', async (e) => {
@@ -351,13 +388,21 @@ document.getElementById('form-nova-os').addEventListener('submit', async (e) => 
   const idEdicao = document.getElementById('edit-os-id').value;
   const actionCall = idEdicao ? 'editarOS' : 'novaOS';
 
+  let prevRaw = document.getElementById('nova-os-prev').value;
+  let prevFormatada = prevRaw;
+  if(prevRaw && prevRaw.includes('-')) {
+      let p = prevRaw.split('-');
+      prevFormatada = `${p[2]}/${p[1]}/${p[0]}`; 
+  }
+
   const payload = {
     idOS: idEdicao || document.getElementById('nova-os-numero').value.trim(),
     solicitante: usuarioAtual.nome,
     setor: document.getElementById('nova-os-local').value,
     descricao: document.getElementById('nova-os-desc').value,
     prioridade: document.getElementById('nova-os-prio').value,
-    previsao: document.getElementById('nova-os-prev').value 
+    previsao: prevFormatada, 
+    previsao_raw: prevRaw
   };
 
   try {
@@ -377,11 +422,19 @@ document.getElementById('form-nova-os').addEventListener('submit', async (e) => 
   }
 });
 
-async function mudarStatusOS(idOS, novoStatus) {
+// Alteração de Status com Loading
+async function mudarStatusOS(idOS, novoStatus, btnElement) {
+  const htmlOriginal = btnElement.innerHTML;
+  btnElement.innerHTML = '<span class="material-symbols-outlined spinning-icon" style="font-size:16px;">sync</span> Aguarde...';
+  btnElement.disabled = true;
   try {
     await fetch(API_URL, { method: 'POST', headers:{'Content-Type':'text/plain'}, body: JSON.stringify({ action: 'mudarStatusDireto', payload: { idOS: idOS, novoStatus: novoStatus } }) });
     carregarDadosAPI();
-  } catch(e) { alert('Erro ao alterar status.'); }
+  } catch(e) { 
+    alert('Erro ao alterar status.'); 
+    btnElement.innerHTML = htmlOriginal;
+    btnElement.disabled = false;
+  }
 }
 
 async function deletarOS(btnElement) {
@@ -403,6 +456,27 @@ async function deletarOS(btnElement) {
   }
 }
 
+function editarObservacaoOS() {
+    const os = todasOS.find(o => (o.idservico||o.id) === osAbertaNoModal);
+    if(!os) return;
+    
+    let textoAtual = os.observacoes || '';
+    const novoTexto = prompt("Edite as Orientações / Informações desta OS:", textoAtual);
+    if(novoTexto === null) return; 
+    
+    const btn = document.getElementById('btn-edit-obs-os');
+    if(btn) { btn.innerHTML = '<span class="material-symbols-outlined spinning-icon" style="font-size:16px;">sync</span>'; btn.disabled = true; }
+
+    fetch(API_URL, { method: 'POST', headers:{'Content-Type':'text/plain'}, body: JSON.stringify({ action: 'editarObservacaoOS', payload: { idOS: osAbertaNoModal, observacao: novoTexto } })})
+    .then(() => {
+        os.observacoes = novoTexto; 
+        const obsFormatada = novoTexto.trim() ? novoTexto.replace(/\n/g, '<br>') : "<i>Nenhuma informação adicional.</i>";
+        document.getElementById('modal-desc').innerHTML = obsFormatada;
+    })
+    .catch(() => alert('Erro ao salvar as observações gerais.'))
+    .finally(() => { if(btn) { btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px;">edit</span>'; btn.disabled = false; }});
+}
+
 function abrirDetalhesOS(jsonOS, cor, progressoReal) {
   const os = JSON.parse(decodeURIComponent(jsonOS));
   osAbertaNoModal = os.idservico || os.id; 
@@ -414,7 +488,7 @@ function abrirDetalhesOS(jsonOS, cor, progressoReal) {
   document.getElementById('modal-status').style.color = cor;
   
   const isRed = String(os.prioridade||'').toUpperCase() === 'ALTA' || String(os.prioridade||'').toUpperCase() === 'URGENTE';
-  document.getElementById('modal-prioridade').innerHTML = `<span class="badge-prioridade" style="background:${isRed?'#fecaca':'#e2e8f0'}; color:${isRed?'#b91c1c':'#475569'};">${isRed?'🚨 ':''}${os.prioridade||'Baixa'}</span>`;
+  document.getElementById('modal-prioridade').innerHTML = `<span class="badge-prioridade" style="background:${isRed?'#fecaca':'#e2e8f0'}; color:${isRed?'#b91c1c':'#475569'};">Prioridade: ${isRed?'🚨 ':''}${os.prioridade||'Baixa'}</span>`;
   
   document.getElementById('modal-titulo').textContent = `${os.setorlocal||''} - ${os.descricaodoservico||''}`;
   document.getElementById('modal-solicitante').textContent = os.solicitante||'N/D';
@@ -439,21 +513,31 @@ function abrirDetalhesOS(jsonOS, cor, progressoReal) {
   document.getElementById('modal-desc').innerHTML = obsOS;
 
   document.getElementById('modal-detalhes').classList.add('active');
+  checkModalsOpen();
   carregarSubTarefasDaOS(osAbertaNoModal);
 }
 
+// Concluir tudo (OS e Sub-Tarefas simultaneamente)
 async function concluirOSDireto() {
   if(!confirm('Deseja dar esta OS como 100% CONCLUÍDA?')) return;
   const btn = document.getElementById('btn-concluir-os-direto');
-  btn.innerHTML = '<span class="material-symbols-outlined spinning-icon">sync</span> Concluindo...';
+  btn.innerHTML = '<span class="material-symbols-outlined spinning-icon">sync</span> Concluindo Tudo...';
   btn.disabled = true;
   
   try {
+    const pendentes = subTarefasAtuais.filter(s => !s.status.toUpperCase().includes('CONCLUÍDO'));
+    const promessas = pendentes.map(s => fetch(API_URL, { method: 'POST', headers:{'Content-Type':'text/plain'}, body: JSON.stringify({ action: 'atualizarStatusSub', payload: { idSub: s.idSub, novoStatus: 'Concluído' } })}));
+    
+    if(promessas.length > 0) {
+        await Promise.all(promessas);
+    }
+
     await fetch(API_URL, { method: 'POST', headers:{'Content-Type':'text/plain'}, body: JSON.stringify({ action: 'atualizarProgressoOS', payload: { idOS: osAbertaNoModal, novoProgresso: 100, novoStatus: 'Concluído' } })});
+    
     fecharModais();
     carregarDadosAPI();
   } catch(e) {
-    alert('Erro ao concluir OS.');
+    alert('Erro ao concluir OS integralmente.');
   } finally {
     btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:18px;">done_all</span> Concluir O.S. Imediatamente (100%)';
     btn.disabled = false;
@@ -485,21 +569,23 @@ async function deletarSubTarefa(idSub) {
   } catch(e) { alert('Erro ao excluir.'); }
 }
 
-function removerComentarioSub(idSub) {
-    if(!confirm("Deseja apagar este comentário?")) return;
-    fetch(API_URL, { method: 'POST', headers:{'Content-Type':'text/plain'}, body: JSON.stringify({ action: 'addInteracao', payload: { alvo: 'SUB', alvoID: idSub, tipo: 'OBS', base64: null, mimeType: null, texto: ' ', autor: 'Sistema' } })})
+function removerComentarioSub(idSub, btn) {
+    if(!confirm("Deseja limpar esta observação permanentemente?")) return;
+    btn.innerHTML = '<span class="material-symbols-outlined spinning-icon" style="font-size:15px;">sync</span>'; btn.disabled = true;
+    fetch(API_URL, { method: 'POST', headers:{'Content-Type':'text/plain'}, body: JSON.stringify({ action: 'editarObservacaoSub', payload: { idSub: idSub, observacao: '' } })})
     .then(() => carregarSubTarefasDaOS(osAbertaNoModal))
-    .catch(() => alert('Erro ao remover observação.'));
+    .catch(() => { alert('Erro ao remover observação.'); btn.innerHTML='<span class="material-symbols-outlined" style="font-size:15px;">delete</span>'; btn.disabled=false; });
 }
 
-function editarComentarioSub(idSub, textoAtual) {
+function editarComentarioSub(idSub, textoAtual, btn) {
     const limpo = textoAtual.replace(/\[.*?\]:\s*/, '');
-    const novoTexto = prompt("Edite a observação da tarefa:", limpo);
-    if(novoTexto === null || novoTexto.trim() === '') return;
+    const novoTexto = prompt("Edite a observação da pendência:", limpo);
+    if(novoTexto === null) return;
     
-    fetch(API_URL, { method: 'POST', headers:{'Content-Type':'text/plain'}, body: JSON.stringify({ action: 'addInteracao', payload: { alvo: 'SUB', alvoID: idSub, tipo: 'OBS', base64: null, mimeType: null, texto: novoTexto, autor: usuarioAtual.nome } })})
+    btn.innerHTML = '<span class="material-symbols-outlined spinning-icon" style="font-size:15px;">sync</span>'; btn.disabled = true;
+    fetch(API_URL, { method: 'POST', headers:{'Content-Type':'text/plain'}, body: JSON.stringify({ action: 'editarObservacaoSub', payload: { idSub: idSub, observacao: novoTexto } })})
     .then(() => carregarSubTarefasDaOS(osAbertaNoModal))
-    .catch(() => alert('Erro ao editar observação.'));
+    .catch(() => { alert('Erro ao editar observação.'); btn.innerHTML='<span class="material-symbols-outlined" style="font-size:15px;">edit</span>'; btn.disabled=false; });
 }
 
 async function carregarSubTarefasDaOS(idOS) {
@@ -523,7 +609,7 @@ function renderizarSubTarefas(subs) {
     let display = `
       <div class="sub-task-item animate-hover" style="border-left: 4px solid ${isConcluido?'var(--status-concluido)':'var(--status-andamento)'}">
         <div class="sub-task-info">
-          <strong style="text-decoration:${isConcluido?'line-through':'none'}">${s.descricao}</strong><br>
+          <strong style="color:${isConcluido?'var(--status-concluido)':'inherit'}; transition:0.2s;">${s.descricao}</strong><br>
           <span style="font-size:0.78rem; color:var(--text-muted);">👤 ${s.responsavel} | 📊 ${s.status}</span>
         </div>
         <div class="sub-task-actions">
@@ -543,8 +629,8 @@ function renderizarSubTarefas(subs) {
                 ${String(s.observacoes).replace(/\n/g, '<br>')}
             </div>
             <div class="sub-obs-actions">
-                <button class="btn-mini-acao animate-pop" title="Editar" onclick="editarComentarioSub('${s.idSub}', '${obsLimpa}')"><span class="material-symbols-outlined" style="font-size:15px;">edit</span></button>
-                <button class="btn-mini-acao del animate-pop" title="Apagar" onclick="removerComentarioSub('${s.idSub}')"><span class="material-symbols-outlined" style="font-size:15px;">delete</span></button>
+                <button class="btn-mini-acao animate-pop" title="Editar" onclick="editarComentarioSub('${s.idSub}', '${obsLimpa}', this)"><span class="material-symbols-outlined" style="font-size:15px;">edit</span></button>
+                <button class="btn-mini-acao del animate-pop" title="Apagar" onclick="removerComentarioSub('${s.idSub}', this)"><span class="material-symbols-outlined" style="font-size:15px;">delete</span></button>
             </div>
         </div>`;
     }
@@ -568,6 +654,7 @@ function prepararInteracao(alvo, tipo, idSub = '') {
   document.getElementById('foto-selecionada').textContent = ''; document.getElementById('input-obs').value = '';
   arquivoBase64 = null; arquivoMime = null;
   document.getElementById('modal-interacao').classList.add('active');
+  checkModalsOpen();
 }
 
 document.getElementById('input-foto').addEventListener('change', function(e) {
@@ -586,7 +673,7 @@ async function enviarInteracao() {
   btn.innerHTML = '<span class="material-symbols-outlined spinning-icon">sync</span> Enviando...'; btn.disabled = true;
   try {
     await fetch(API_URL, { method: 'POST', headers:{'Content-Type':'text/plain'}, body: JSON.stringify({ action: 'addInteracao', payload: { alvo: intAlvo, alvoID: intID, tipo: intTipo, base64: arquivoBase64, mimeType: arquivoMime, texto: texto, autor: usuarioAtual.nome } })});
-    document.getElementById('modal-interacao').classList.remove('active');
+    fecharModalInteracao();
     if(intAlvo === 'SUB') carregarSubTarefasDaOS(osAbertaNoModal); else { fecharModais(); carregarDadosAPI(); } 
   } catch(e) { alert('Erro.'); } finally { btn.innerHTML = 'Enviar'; btn.disabled = false; }
 }
@@ -620,5 +707,33 @@ async function recalcularProgressoGeral() {
   await fetch(API_URL, { method: 'POST', headers:{'Content-Type':'text/plain'}, body: JSON.stringify({ action: 'atualizarProgressoOS', payload: { idOS: osAbertaNoModal, novoProgresso: novoProgresso, novoStatus: novoStatus } })});
   carregarDadosAPI(); 
 }
+
+// --- CONTROLE DE SCROLL SUPER OTIMIZADO (FIM DO TREMOR/JITTER) ---
+let ultimoScroll = window.scrollY;
+let ticking = false;
+
+window.addEventListener('scroll', () => {
+  if (!ticking) {
+    window.requestAnimationFrame(() => {
+      let atualScroll = window.scrollY;
+      
+      // Se tiver pertinho do topo, mostra os cards sem pestanejar
+      if (atualScroll < 60) {
+        document.body.classList.remove('hide-cards');
+      } else {
+        // ZONA MORTA DE 15px: Evita que micro-movimentos escondam/mostrem a div sem querer
+        if (atualScroll > ultimoScroll + 15) {
+          document.body.classList.add('hide-cards');
+        } else if (atualScroll < ultimoScroll - 15) {
+          document.body.classList.remove('hide-cards');
+        }
+      }
+      
+      ultimoScroll = atualScroll > 0 ? atualScroll : 0;
+      ticking = false;
+    });
+    ticking = true;
+  }
+});
 
 checarSessaoAutomatica();
