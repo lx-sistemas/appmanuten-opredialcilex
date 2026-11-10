@@ -127,7 +127,7 @@
       </div>
     </div>
 
-    <!-- PAINEL DE BUSCA E FILTROS FIXO (SEMPRE VISÍVEL) -->
+    <!-- PAINEL DE BUSCA E FILTROS FIXO -->
     <div class="sticky-filters-container">
       <div class="app-content-inner">
         <div class="filters-bar">
@@ -146,7 +146,6 @@
     </div>
 
     <div class="app-content">
-      <!-- LISTA DE OS -->
       <section class="os-list" id="os-container"></section>
     </div>
   </main>
@@ -165,6 +164,10 @@
           <div class="input-group" id="grupo-num-os">
             <label>Nº da Ordem de Serviço (Ex: 190.001)</label>
             <input type="text" id="nova-os-numero" placeholder="Digite o número da OS" required>
+          </div>
+          <div class="input-group">
+            <label>Solicitante</label>
+            <input type="text" id="nova-os-solicitante" placeholder="Nome de quem solicitou" required>
           </div>
           <div class="input-group">
             <label>Setor / Local (Ex: Bloco B - Sala 302)</label>
@@ -215,19 +218,17 @@
       <div class="modal-body modal-body-compact">
         
         <div class="os-info-grid">
-          <div>
-            <strong>Solicitante:</strong> <span id="modal-solicitante"></span><br>
-            <strong>Criada em:</strong> <span id="modal-data"></span><br>
-            <strong>Previsão de Entrega:</strong> <span id="modal-previsao"></span>
+          <div id="grid-datas-modal" style="width:100%;">
+            <!-- Preenchido via JS -->
           </div>
         </div>
 
         <div style="background:var(--bg-color); padding:10px 12px; border-radius:8px; margin-bottom:12px;">
            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 4px;">
-             <h4 style="font-size: 0.78rem; color: var(--text-muted); margin:0;">📌 Orientações / Informações:</h4>
+             <h4 style="font-size: 0.78rem; color: var(--text-muted); margin:0;">📌 Orientações / Informações / Anexos:</h4>
              <button id="btn-edit-obs-os" class="btn-mini-acao animate-pop" title="Editar Orientações" onclick="editarObservacaoOS()"><span class="material-symbols-outlined" style="font-size:16px;">edit</span></button>
            </div>
-           <p id="modal-desc" style="font-size:0.85rem;"></p>
+           <p id="modal-desc" style="font-size:0.85rem; line-height:1.4;"></p>
         </div>
         
         <div class="action-bar-os-compact">
@@ -252,6 +253,10 @@
         
         <button id="btn-concluir-os-direto" class="btn-primary animate-pop" style="background: var(--status-concluido); color: white; width: 100%; margin-bottom: 18px; padding: 10px; font-size: 0.9rem;" onclick="concluirOSDireto()">
           <span class="material-symbols-outlined" style="font-size:18px;">done_all</span> Concluir O.S. Imediatamente (100%)
+        </button>
+
+        <button id="btn-reverter-os" class="btn-outline animate-pop" style="color:#d97706; border-color:#f59e0b; background:#fffbeb; width: 100%; margin-bottom: 18px; padding: 10px; font-size: 0.9rem; justify-content:center; display:none;" onclick="reverterOSParaAndamento()">
+          <span class="material-symbols-outlined" style="font-size:18px;">undo</span> Voltar para etapa em Andamento
         </button>
 
         <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom: 8px; border-bottom: 2px solid var(--border); padding-bottom:4px;">
@@ -289,7 +294,7 @@
             <span class="material-symbols-outlined" style="font-size:24px; margin-right:8px;" id="icone-upload">upload_file</span> Escolher Arquivo/Foto
           </label>
           <input type="file" id="input-foto" style="display:none;">
-          <p id="foto-selecionada" style="margin-top:8px; font-size:0.8rem; color:var(--status-concluido);"></p>
+          <p id="foto-selecionada" style="margin-top:8px; font-size:0.8rem; color:var(--status-concluido); font-weight:bold;"></p>
         </div>
         <div id="area-obs" style="display:none;">
           <textarea id="input-obs" rows="3" placeholder="Digite seu comentário..." style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;"></textarea>
